@@ -14,8 +14,10 @@ public class Printer {
 
 	public void printMessages(String[] numbers, PrinterThread thread) {
 		try {
+			// Seção crítica 2 threads
 			streamSemaphore.acquire();
 
+			// Seção crítica mutex das 2 threads dentro
 			lockPrints.lock();
 			threadIn.add(Thread.currentThread().getName());
 
@@ -26,13 +28,29 @@ public class Printer {
 			else
 				freeStream = System.out;
 
-			// imprimir quem está dentro
+			// Imprimir quem está dentro
+			thread.getStream().printf("Dentro: %s\n", threadIn);
 
+			// Fim seção crítica mutex das 2 threads dentro
 			lockPrints.unlock();
 
+			// Impressão dos dados
+			for (String number : numbers) {
+				thread.getStream().print(number);
+			}
+
+			lockPrints.lock();
+			threadIn.remove(thread.getName());
+			lockPrints.unlock();
 		} catch (InterruptedException e) {
 		} finally {
+			// Fim seção crítica 2 threads
 			streamSemaphore.release();
+//			try {
+//				thread.sleep(new Random().nextInt(500));
+//			} catch (InterruptedException e) {
+//
+//			}
 		}
 	}
 }

@@ -15,6 +15,10 @@ public class PrinterThread extends Thread {
 		this.printer = print;
 	}
 
+	public PrintStream getStream() {
+		return stream;
+	}
+
 	@Override
 	public void run() {
 		while (true) {
