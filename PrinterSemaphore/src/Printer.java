@@ -9,7 +9,7 @@ public class Printer {
 	private Semaphore streamSemaphore = new Semaphore(2);
 	private ReentrantLock lockPrints = new ReentrantLock(true);
 
-	private List<String> threadIn = new ArrayList<>();
+	private List<String> threadsIn = new ArrayList<>();
 	private PrintStream freeStream = System.out;
 
 	public void printMessages(String[] numbers, PrinterThread thread) {
@@ -18,8 +18,13 @@ public class Printer {
 			streamSemaphore.acquire();
 
 			// Seção crítica mutex das 2 threads dentro
+
 			lockPrints.lock();
-			threadIn.add(Thread.currentThread().getName());
+			String console = freeStream == System.out ? "-out" : "-err";
+
+			String threadName = Thread.currentThread().getName() + console;
+
+			threadsIn.add(threadName);
 
 			thread.setStream(freeStream);
 
@@ -29,7 +34,8 @@ public class Printer {
 				freeStream = System.out;
 
 			// Imprimir quem está dentro
-			thread.getStream().printf("Dentro: %s\n", threadIn);
+			thread.getStream().printf("Dentro: [%s]: %s\n", Thread.currentThread().getName(), threadsIn);
+			thread.getStream().flush();
 
 			// Fim seção crítica mutex das 2 threads dentro
 			lockPrints.unlock();
@@ -37,20 +43,18 @@ public class Printer {
 			// Impressão dos dados
 			for (String number : numbers) {
 				thread.getStream().print(number);
+				thread.getStream().flush();
 			}
 
 			lockPrints.lock();
-			threadIn.remove(thread.getName());
+			threadsIn.remove(threadName);
+			freeStream = thread.getStream();
+			thread.getStream().flush();
 			lockPrints.unlock();
 		} catch (InterruptedException e) {
 		} finally {
 			// Fim seção crítica 2 threads
 			streamSemaphore.release();
-//			try {
-//				thread.sleep(new Random().nextInt(500));
-//			} catch (InterruptedException e) {
-//
-//			}
 		}
 	}
 }
