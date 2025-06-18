@@ -24,7 +24,7 @@ import br.edu.ifsuldeminas.sd.chat.Sender;
 public class ChatInterface extends JFrame implements MessageContainer {
 
 	private static final long serialVersionUID = 1L;
-	private JTextField localPortField, remotePortField, messageField, nameField;
+	private JTextField localPortField, remotePortField, messageField, nameField, remoteHostIp;
 	private JTextArea chatArea;
 	private JButton connectButton, sendButton;
 	private Sender sender;
@@ -41,10 +41,16 @@ public class ChatInterface extends JFrame implements MessageContainer {
 		topPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
 		// Row 1: Name
-		JPanel row1Panel = new JPanel(new BorderLayout(5, 5));
-		row1Panel.add(new JLabel("Name:"), BorderLayout.WEST);
+		JPanel row1Panel = new JPanel(new GridLayout(1, 4, 5, 5));
+
+		row1Panel.add(new JLabel("Name:"));
 		nameField = new JTextField();
-		row1Panel.add(nameField, BorderLayout.CENTER);
+		row1Panel.add(nameField);
+
+		row1Panel.add(new JLabel("IP Remoto:"));
+		remoteHostIp = new JTextField("localhost"); // valor padrão opcional
+		row1Panel.add(remoteHostIp);
+
 		topPanel.add(row1Panel);
 
 		// Row 2: Ports
@@ -113,6 +119,7 @@ public class ChatInterface extends JFrame implements MessageContainer {
 			userName = nameField.getText().trim();
 			int localPort = Integer.parseInt(localPortField.getText().trim());
 			int serverPort = Integer.parseInt(remotePortField.getText().trim());
+			String remoteIp = remoteHostIp.getText().trim();
 
 			if (userName.isEmpty()) {
 				JOptionPane.showMessageDialog(this, "Please, type your name.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -120,7 +127,7 @@ public class ChatInterface extends JFrame implements MessageContainer {
 			}
 
 			boolean isConnectionOriented = tcpButton.isSelected();
-			this.sender = ChatFactory.build(isConnectionOriented, "localhost", serverPort, localPort, this);
+			this.sender = ChatFactory.build(isConnectionOriented, remoteIp, serverPort, localPort, this);
 
 			nameField.setEditable(false);
 			localPortField.setEditable(false);
