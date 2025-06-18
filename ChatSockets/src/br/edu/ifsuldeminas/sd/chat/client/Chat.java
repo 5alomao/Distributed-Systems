@@ -4,41 +4,40 @@ import java.util.Scanner;
 
 import br.edu.ifsuldeminas.sd.chat.ChatException;
 import br.edu.ifsuldeminas.sd.chat.ChatFactory;
-import br.edu.ifsuldeminas.sd.chat.MessageContainer;
 import br.edu.ifsuldeminas.sd.chat.Sender;
 
 public class Chat {
+
 	public static String KEY_TO_EXIT = "q";
 	public static int RECEIVER_BUFFER_SIZE = 1000;
 
 	public static void main(String[] args) {
-		Scanner reader = new Scanner(System.in);
-		System.out.print("Porta local: ");
-		int localPort = reader.nextInt();
-		System.out.print("Porta remota: ");
-		int serverPort = reader.nextInt();
-// Para limpar o buffer
-		reader.nextLine();
-		System.out.print("Nome: ");
-		String from = reader.nextLine();
+		Scanner reader = null;
+		int localPort = 0;
+		int serverPort = 0;
 		try {
-			Sender sender = ChatFactory.build("localhost", serverPort, localPort, new SysOutContainer());
+			localPort = Integer.parseInt(args[0]);
+			serverPort = Integer.parseInt(args[1]);
+		} catch (NumberFormatException e1) {
+			System.err.printf("Errors on imput parameters");
+			System.exit(1);
+		}
+		try {
+			Sender sender = ChatFactory.build(true, "localhost", serverPort, localPort, new SysOutContainer());
+			reader = new Scanner(System.in);
 			String message = "";
 			while (!message.equals(KEY_TO_EXIT)) {
 				message = reader.nextLine();
-				message = String.format("%s%s%s", message, MessageContainer.FROM, from);
-				if (!message.equals("")) {
-					if (message.equals("q"))
-
-						System.exit(0);
-					else
-						sender.send(message);
-				}
+				if (!message.equals("q")) {
+					sender.send(message);
+				} else
+					System.exit(0);
 			}
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
 		} catch (ChatException chatException) {
-			System.err.printf(String.format("Houve algum erro no chat. Mensagem do erro: %s",
+			System.err.printf(String.format("There was a problem with the chat. Error message: %s",
 					chatException.getCause().getMessage()));
-		} finally {
 			reader.close();
 			System.exit(0);
 		}

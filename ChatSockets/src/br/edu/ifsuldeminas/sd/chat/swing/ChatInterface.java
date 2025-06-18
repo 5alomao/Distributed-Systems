@@ -1,13 +1,16 @@
 package br.edu.ifsuldeminas.sd.chat.swing;
 
 import java.awt.BorderLayout;
+import java.awt.GridLayout;
 
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -26,40 +29,63 @@ public class ChatInterface extends JFrame implements MessageContainer {
 	private JButton connectButton, sendButton;
 	private Sender sender;
 	private String userName;
+	private JRadioButton tcpButton, udpButton;
 
 	public ChatInterface() {
-		setTitle("Chat Interface - UDP");
-		setSize(400, 400);
+		setTitle("Chat Interface - TCP/UDP");
+		setSize(450, 420);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLayout(new BorderLayout(10, 10));
 
-		JPanel topPanel = new JPanel(new java.awt.GridLayout(2, 4, 5, 5));
+		JPanel topPanel = new JPanel(new GridLayout(4, 1, 5, 5));
 		topPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-		topPanel.add(new JLabel("Name:"));
+		// Row 1: Name
+		JPanel row1Panel = new JPanel(new BorderLayout(5, 5));
+		row1Panel.add(new JLabel("Name:"), BorderLayout.WEST);
 		nameField = new JTextField();
-		topPanel.add(nameField);
+		row1Panel.add(nameField, BorderLayout.CENTER);
+		topPanel.add(row1Panel);
 
-		topPanel.add(new JLabel("Local Port:"));
+		// Row 2: Ports
+		JPanel row2Panel = new JPanel(new GridLayout(1, 4, 5, 5));
+		row2Panel.add(new JLabel("Local Port:"));
 		localPortField = new JTextField();
-		topPanel.add(localPortField);
-
-		topPanel.add(new JLabel("Remote Port:"));
+		row2Panel.add(localPortField);
+		row2Panel.add(new JLabel("Remote Port:"));
 		remotePortField = new JTextField();
-		topPanel.add(remotePortField);
+		row2Panel.add(remotePortField);
+		topPanel.add(row2Panel);
 
-		topPanel.add(new JPanel());
+		// Row 3: Protocol selection
+		JPanel row3Panel = new JPanel(new BorderLayout(5, 5));
+		row3Panel.add(new JLabel("Communication Type:"), BorderLayout.WEST);
+		tcpButton = new JRadioButton("TCP");
+		udpButton = new JRadioButton("UDP", true);
+		ButtonGroup group = new ButtonGroup();
+		group.add(tcpButton);
+		group.add(udpButton);
+		JPanel protocolPanel = new JPanel();
+		protocolPanel.add(tcpButton);
+		protocolPanel.add(udpButton);
+		row3Panel.add(protocolPanel, BorderLayout.CENTER);
+		topPanel.add(row3Panel);
 
+		// Row 4: Connect button
+		JPanel row4Panel = new JPanel(new BorderLayout());
 		connectButton = new JButton("Connect");
-		topPanel.add(connectButton);
+		row4Panel.add(connectButton, BorderLayout.EAST);
+		topPanel.add(row4Panel);
 
 		add(topPanel, BorderLayout.NORTH);
 
+		// Center: Chat area
 		chatArea = new JTextArea();
 		chatArea.setEditable(false);
 		JScrollPane scrollPane = new JScrollPane(chatArea);
 		add(scrollPane, BorderLayout.CENTER);
 
+		// Bottom: Message field + send button
 		JPanel bottomPanel = new JPanel(new BorderLayout(10, 0));
 		messageField = new JTextField();
 		bottomPanel.add(messageField, BorderLayout.CENTER);
@@ -93,15 +119,20 @@ public class ChatInterface extends JFrame implements MessageContainer {
 				return;
 			}
 
-			this.sender = ChatFactory.build("localhost", serverPort, localPort, this);
+			boolean isConnectionOriented = tcpButton.isSelected();
+			this.sender = ChatFactory.build(isConnectionOriented, "localhost", serverPort, localPort, this);
 
 			nameField.setEditable(false);
 			localPortField.setEditable(false);
 			remotePortField.setEditable(false);
+			tcpButton.setEnabled(false);
+			udpButton.setEnabled(false);
 			connectButton.setEnabled(false);
 			messageField.setEnabled(true);
 			sendButton.setEnabled(true);
-			chatArea.append("******\nConnected successfully!\n******\n\n");
+
+			chatArea.append(
+					"******\nConnected successfully using " + (isConnectionOriented ? "TCP" : "UDP") + "!\n******\n\n");
 
 		} catch (NumberFormatException ex) {
 			JOptionPane.showMessageDialog(this, "Ports must be valid numbers.", "Format error",
@@ -118,8 +149,7 @@ public class ChatInterface extends JFrame implements MessageContainer {
 			try {
 				String messageToSend = String.format("%s%s%s", messageText, MessageContainer.FROM, userName);
 				sender.send(messageToSend);
-
-				chatArea.append(String.format("I:\n %s\n\n", messageText));
+				chatArea.append(String.format("You:\n %s\n\n", messageText));
 				messageField.setText("");
 			} catch (ChatException ex) {
 				JOptionPane.showMessageDialog(this, "Error sending message: " + ex.getMessage(), "Error sending",
@@ -130,9 +160,8 @@ public class ChatInterface extends JFrame implements MessageContainer {
 
 	@Override
 	public void newMessage(String message) {
-		if (message == null || message.trim().isEmpty()) {
+		if (message == null || message.trim().isEmpty())
 			return;
-		}
 
 		String[] messageParts = message.split(MessageContainer.FROM);
 		String content = messageParts[0];
